@@ -2,26 +2,36 @@ import cv2
 from ultralytics import YOLO
 import pandas as pd
 import cvzone
+import time
 
+desired_fps = 60  # Target FPS
+delay = 6.0 / desired_fps  # Target delay per frame (seconds)
 
-model = YOLO("yolo11n.pt")  
-
-
+model = YOLO("yolo11n.pt")
 cap=cv2.VideoCapture('fall.mp4')
 my_file = open("classes.txt", "r")
 data = my_file.read()
 class_list = data.split("\n")
-
-
-
 count=0
+
 while True:
-    ret,frame = cap.read()
+    start_time = time.time()  # Start timer
+
+    ret, frame = cap.read()
+    if not ret:
+        break
+
     count += 1
     if count % 3 != 0:
         continue
-    if not ret:
-       break
+
+#     ret,frame = cap.read()
+#     count += 1
+#     if count % 3 != 0:
+#         continue
+#     if not ret:
+#        break
+
     frame = cv2.resize(frame, (1020, 600))
 
     results = model(frame)
@@ -49,10 +59,16 @@ while True:
                 cv2.rectangle(frame,(x1,y1),(x2,y2),(0,255,0),2)    
                 
     cv2.imshow("RGB", frame)
-    # Break the loop if 'q' is pressed
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+
+    processing_time = time.time() - start_time
+    remaining_delay = max(1, int((delay - processing_time) * 1000))  # Convert to ms
+
+    if cv2.waitKey(remaining_delay) & 0xFF == ord('q'):
         break
 
+    # Break the loop if 'q' is pressed
+#     if cv2.waitKey(0) & 0xFF == ord('q'):
+#         break
 
 cap.release()
 cv2.destroyAllWindows()
